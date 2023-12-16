@@ -3,13 +3,17 @@ import numpy as np
 import datetime
 import os
 import psycopg2
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 # Database connection parameters
-db_name = "postgres"  # Replace with your database name
-db_user = "postgres"  # Replace with your database username
-db_pass = "mysecretpassword"  # Replace with your database password
-db_host = "localhost"  # Adjust if your database is hosted elsewhere
-db_port = "5432"  # Default PostgreSQL port
+db_name = os.getenv('DB_NAME')
+db_user = os.getenv('DB_USER')
+db_pass = os.getenv('DB_PASS')
+db_host = os.getenv('DB_HOST')
+db_port = os.getenv('DB_PORT')
 
 # Directory for snapshots
 snapshot_dir = r"/home/noaa/PycharmProjects/ObjectDetection/snapshot_directory"
