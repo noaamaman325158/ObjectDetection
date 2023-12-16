@@ -2,9 +2,50 @@ import cv2
 import numpy as np
 import datetime
 import os
+import psycopg2
 
-snapshot_dir = r"/home/noaa/PycharmProjects/ObjectDetection/snapshot_directory"  # Replace with your desired path
+# Database connection parameters
+db_name = "postgres"  # Replace with your database name
+db_user = "postgres"  # Replace with your database username
+db_pass = "mysecretpassword"  # Replace with your database password
+db_host = "localhost"  # Adjust if your database is hosted elsewhere
+db_port = "5432"  # Default PostgreSQL port
+
+# Directory for snapshots
+snapshot_dir = r"/home/noaa/PycharmProjects/ObjectDetection/snapshot_directory"
 os.makedirs(snapshot_dir, exist_ok=True)
+
+
+# Function to connect to the database
+def connect_db():
+    return psycopg2.connect(
+        database=db_name,
+        user=db_user,
+        password=db_pass,
+        host=db_host,
+        port=db_port
+    )
+
+
+# Function to insert detection data into the database
+def insert_detection_data(timestamp, object_type, confidence, location, bounding_box, image_path, additional_metadata):
+    conn = connect_db()
+    cur = conn.cursor()
+    sql = """
+    INSERT INTO object_detections (timestamp, object_type, confidence_score, location, bounding_box, image_snapshot, additional_metadata)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    with open(image_path, 'rb') as file:
+        image_data = file.read()
+
+    # Explicitly convert confidence to a Python float
+    confidence = float(confidence)
+
+    cur.execute(sql, (timestamp, object_type, confidence, location, bounding_box, image_data, additional_metadata))
+    conn.commit()
+    cur.close()
+    conn.close()
+
 
 # Load pre-trained model and classes
 net = cv2.dnn.readNetFromCaffe('deploy.prototxt', 'mobilenet_iter_73000.caffemodel')
@@ -15,14 +56,13 @@ classes = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus"
 def detect_dogs_and_people(frame):
     (h, w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 0.007843, (300, 300), 127.5)
-
     net.setInput(blob)
     detections = net.forward()
     current_time = datetime.datetime.now()
 
     for i in np.arange(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > 0.2:  # Confidence threshold
+        if confidence > 0.2:
             idx = int(detections[0, 0, i, 1])
             if classes[idx] not in ["dog", "person"]:
                 continue
@@ -33,17 +73,23 @@ def detect_dogs_and_people(frame):
             label = "{}: {:.2f}%".format(detected_class, confidence * 100)
             cv2.putText(frame, label, (startX, startY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            # Write detection time to file and take a snapshot
             snapshot_filename = f"{snapshot_dir}/snapshot_{detected_class}_{current_time.strftime('%Y%m%d_%H%M%S')}.png"
-            cv2.imwrite(snapshot_filename, frame)  # Save the current frame as an image
-            with open("detections.txt", "a") as file:
-                file.write(
-                    f"{detected_class.capitalize()} detected at {current_time.strftime('%Y-%m-%d %H:%M:%S')}, snapshot saved as {snapshot_filename}\n")
-            break  # Stop after the first detection to avoid multiple logs and snapshots for the same object in one frame
+            cv2.imwrite(snapshot_filename, frame)
+            insert_detection_data(
+                timestamp=current_time,
+                object_type=detected_class,
+                confidence=confidence,
+                location="YourCameraLocation",  # Replace with actual camera location
+                bounding_box=str([startX, startY, endX, endY]),
+                image_path=snapshot_filename,
+                additional_metadata="{}"  # Replace with actual metadata if available
+            )
+            break
 
 
 # Load a video
 cap = cv2.VideoCapture('dog_poo.mp4')
+
 while True:
     ret, frame = cap.read()
     if not ret:

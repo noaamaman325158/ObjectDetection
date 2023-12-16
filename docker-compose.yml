@@ -1,0 +1,16 @@
+version: '3.0'
+services:
+  postgres:
+    image: postgres:13  # Specifying a version for more consistency
+    restart: unless-stopped  # Ensures the container restarts automatically unless manually stopped
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword  # Set your database password
+      POSTGRES_USER: postgres              # Default user
+      POSTGRES_DB: mydatabase              # Name of the database to be created
+    ports:
+      - "5432:5432"                        # Map port 5432 of the container to port 5432 on the host
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist database data
+
+volumes:
+  postgres_data:  # Named volume for storing database data
