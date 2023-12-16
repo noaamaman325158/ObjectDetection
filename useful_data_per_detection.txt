@@ -1,0 +1,9 @@
+1)Timestamp
+2)Object Type
+3)Confidence Score
+4)Location
+5)Bounding Box Coordinates
+6)Images Snapshot
+7)Additional Metadata
+
+
