@@ -5,7 +5,6 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 # Database connection parameters
@@ -52,7 +51,8 @@ def insert_detection_data(timestamp, object_type, confidence, location, bounding
 
 
 # Load pre-trained model and classes
-net = cv2.dnn.readNetFromCaffe('deploy.prototxt', 'mobilenet_iter_73000.caffemodel')
+net = cv2.dnn.readNetFromCaffe('deep_learning_model_setup/deploy.prototxt', 'deep_learning_model_setup'
+                                                                            '/mobilenet_iter_73000.caffemodel')
 classes = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
            "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
 
@@ -68,7 +68,7 @@ def detect_dogs_and_people(frame):
         confidence = detections[0, 0, i, 2]
         if confidence > 0.2:
             idx = int(detections[0, 0, i, 1])
-            if classes[idx] not in ["dog", "person"]:
+            if classes[idx] not in ["dog", "person", "cat"]:
                 continue
             detected_class = classes[idx]
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
@@ -91,18 +91,19 @@ def detect_dogs_and_people(frame):
             break
 
 
-# Load a video
-cap = cv2.VideoCapture('dog_poo.mp4')
+if __name__ == "__main__":
+    # Load a video
+    cap = cv2.VideoCapture('tests_videos/dog_poo.mp4')
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
-    resized_frame = cv2.resize(frame, (640, 480))
-    detect_dogs_and_people(resized_frame)
-    cv2.imshow('Frame', resized_frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        resized_frame = cv2.resize(frame, (640, 480))
+        detect_dogs_and_people(resized_frame)
+        cv2.imshow('Frame', resized_frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-cap.release()
-cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()

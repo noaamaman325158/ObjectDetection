@@ -1,0 +1,11 @@
+certifi==2023.11.17
+charset-normalizer==3.3.2
+docker==7.0.0
+idna==3.6
+numpy==1.26.2
+opencv-python==4.8.1.78
+packaging==23.2
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+requests==2.31.0
+urllib3==2.1.0
